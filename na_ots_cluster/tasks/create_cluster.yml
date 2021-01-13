@@ -13,9 +13,10 @@
 
 # -----------------------------------------------------------------
 # Create the initial cluster template for the configure_node* tasks
+# One task for single node and one task for multi-node  due to MTU size
 # -----------------------------------------------------------------
 
-- name: .....creating cluster
+- name: .....creating cluster - single node
 
   uri:
     url: "{{ deploy_api_url }}/clusters?node_count={{ node_count }}"
@@ -37,5 +38,33 @@
     password: "{{ deploy_pwd }}"
     status_code: 201
     validate_certs: False
+  when: node_count == 1
+
+
+- name: .....creating cluster - multi-node
+
+  uri:
+    url: "{{ deploy_api_url }}/clusters?node_count={{ node_count }}"
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body:
+      name: "{{ cluster_name }}"
+      ontap_image_version: "{{ cluster_ontap_image }}"
+      gateway: "{{ cluster_gateway }}"
+      ip: "{{ cluster_ip }}"
+      netmask: "{{ cluster_netmask }}"
+      mtu: "{{ net_mtu }}"
+      ntp_servers: "{{ cluster_ntp }}"
+      dns_info:
+        dns_ips: "{{ cluster_dns_ips }}"
+        domains: "{{ cluster_dns_domains }}"
+    body_format: json
+    user: "{{ deploy_login }}"
+    password: "{{ deploy_pwd }}"
+    status_code: 201
+    validate_certs: False
+  when: node_count in [2,4,6,8]    
+
 
   register: cluster_create_response
